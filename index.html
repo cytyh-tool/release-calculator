@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Release 時程計算器</title>
+<title>Release Date Calculator</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,7 +40,6 @@
     align-items: center;
   }
 
-  /* Background grid */
   body::before {
     content: '';
     position: fixed;
@@ -62,9 +61,7 @@
     padding: 48px 24px 80px;
   }
 
-  header {
-    margin-bottom: 48px;
-  }
+  header { margin-bottom: 48px; }
 
   .eyebrow {
     font-family: var(--mono);
@@ -83,9 +80,7 @@
     color: var(--text);
   }
 
-  h1 span {
-    color: var(--accent2);
-  }
+  h1 span { color: var(--accent2); }
 
   .subtitle {
     margin-top: 10px;
@@ -94,7 +89,6 @@
     font-weight: 300;
   }
 
-  /* Date input card */
   .input-card {
     background: var(--bg2);
     border: 1px solid var(--border2);
@@ -154,7 +148,6 @@
   .copy-all-btn:hover { background: var(--accent2); }
   .copy-all-btn:active { transform: scale(0.97); }
 
-  /* Timeline */
   .timeline { position: relative; }
 
   .timeline::before {
@@ -180,7 +173,6 @@
     box-shadow: 0 0 20px rgba(240,112,96,0.1);
   }
 
-  /* Left: label */
   .phase-label {
     width: 108px;
     min-width: 108px;
@@ -198,7 +190,6 @@
     text-transform: uppercase;
   }
 
-  /* Dot */
   .phase-dot-col {
     width: 24px;
     min-width: 24px;
@@ -217,7 +208,6 @@
     flex-shrink: 0;
   }
 
-  /* Right: card */
   .phase-card {
     flex: 1;
     margin-left: 16px;
@@ -236,7 +226,6 @@
   }
 
   .phase-card:hover { border-color: var(--border2); }
-
   .phase-card-left { flex: 1; }
 
   .phase-name {
@@ -278,7 +267,6 @@
     letter-spacing: 0.06em;
   }
 
-  /* weekend warning */
   .weekend-warn {
     font-family: var(--mono);
     font-size: 10px;
@@ -286,7 +274,6 @@
     margin-top: 3px;
   }
 
-  /* Copy btn per row */
   .row-copy {
     position: absolute;
     right: 12px;
@@ -307,7 +294,6 @@
   .phase-card:hover .row-copy { opacity: 1; }
   .row-copy:hover { color: var(--text2); border-color: var(--border2); }
 
-  /* Footer */
   footer {
     margin-top: 48px;
     font-family: var(--mono);
@@ -317,7 +303,6 @@
     letter-spacing: 0.06em;
   }
 
-  /* Color definitions per phase */
   .c-purple .dot  { border-color: var(--purple); background: rgba(124,110,245,0.2); }
   .c-amber  .dot  { border-color: var(--amber);  background: rgba(232,163,64,0.2); }
   .c-teal   .dot  { border-color: var(--teal);   background: rgba(61,191,140,0.2); }
@@ -346,33 +331,33 @@
 <div class="container">
   <header>
     <div class="eyebrow">Release Planner</div>
-    <h1>時程<span>計算器</span></h1>
-    <p class="subtitle">輸入 Release 日期，自動推算所有關鍵節點</p>
+    <h1>Release Date <span>Calculator</span></h1>
+    <p class="subtitle">Pick a release date — all key milestones are calculated automatically.</p>
   </header>
 
   <div class="input-card">
     <label>🗓 Release Date</label>
     <input type="date" id="release-date" value="2026-06-29">
-    <button class="copy-all-btn" onclick="copyAll()">複製全部日期</button>
+    <button class="copy-all-btn" onclick="copyAll()">Copy All Dates</button>
   </div>
 
   <div class="timeline" id="timeline"></div>
 
-  <footer>Release Planner · 依據歷史 release 時程推算</footer>
+  <footer>Release Planner · Milestones based on historical release schedule</footer>
 </div>
 
 <script>
 const PHASES = [
-  { name: "Scope Lock Down 1", desc: "第一次範圍確認",   offset: -46, type: "single", color: "purple", badge: "SCOPE" },
-  { name: "Est Day",           desc: "工作量估算",       offset: -45, type: "single", color: "purple", badge: "PLAN"  },
-  { name: "Scope Lock Down 2", desc: "第二次範圍確認",   offset: -33, type: "single", color: "amber",  badge: "SCOPE" },
-  { name: "Dev",               desc: "開發期間",         type: "range", offsetStart: -42, offsetEnd: -26, color: "teal",  badge: "DEV"  },
-  { name: "QA",                desc: "測試期間",         type: "range", offsetStart: -25, offsetEnd: -5,  color: "blue",  badge: "QA"   },
-  { name: "QA Report & Note",  desc: "QA 報告 & Release Note", offset: -4, type: "single", color: "green", badge: "DOCS" },
-  { name: "Release",           desc: "正式上線",         offset: 0,   type: "single", color: "coral", badge: "🚀 RELEASE" },
+  { name: "Scope Lock Down 1", desc: "First scope confirmation",      offset: -46, type: "single", color: "purple", badge: "SCOPE" },
+  { name: "Est Day",           desc: "Effort estimation",             offset: -45, type: "single", color: "purple", badge: "PLAN"  },
+  { name: "Scope Lock Down 2", desc: "Second scope confirmation",     offset: -33, type: "single", color: "amber",  badge: "SCOPE" },
+  { name: "Dev",               desc: "Development period",            type: "range", offsetStart: -42, offsetEnd: -26, color: "teal",  badge: "DEV"  },
+  { name: "QA",                desc: "Testing period",                type: "range", offsetStart: -25, offsetEnd: -5,  color: "blue",  badge: "QA"   },
+  { name: "QA Report & Note",  desc: "QA report & release notes due", offset: -4,  type: "single", color: "green", badge: "DOCS" },
+  { name: "Release",           desc: "Production deployment",         offset: 0,   type: "single", color: "coral", badge: "🚀 RELEASE" },
 ];
 
-const DAYS = ['日','一','二','三','四','五','六'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function addDays(base, n) {
   const d = new Date(base);
@@ -400,20 +385,19 @@ function render() {
     const row = document.createElement('div');
     row.className = `phase-row c-${p.color}${p.offset === 0 ? ' is-release' : ''}`;
 
-    let dateLabel = '', dayLabel = '', warnHtml = '';
-    let copyText = '';
+    let dateLabel = '', dayLabel = '', warnHtml = '', copyText = '';
 
     if (p.type === 'single') {
       const d = addDays(rv, p.offset);
       dateLabel = fmtShort(d);
-      dayLabel = `週${DAYS[d.getDay()]}`;
-      if (isWeekend(d)) warnHtml = `<div class="weekend-warn">⚠ 落在週末</div>`;
+      dayLabel = DAYS[d.getDay()];
+      if (isWeekend(d)) warnHtml = `<div class="weekend-warn">⚠ Falls on a weekend</div>`;
       copyText = `${p.name}: ${fmt(d)}`;
     } else {
       const ds = addDays(rv, p.offsetStart);
       const de = addDays(rv, p.offsetEnd);
       dateLabel = `${fmtShort(ds)} – ${fmtShort(de)}`;
-      dayLabel = `共 ${p.offsetEnd - p.offsetStart + 1} 天`;
+      dayLabel = `${p.offsetEnd - p.offsetStart + 1} days`;
       copyText = `${p.name}: ${fmt(ds)} – ${fmt(de)}`;
     }
 
@@ -437,7 +421,7 @@ function render() {
           <div class="phase-day">${dayLabel}</div>
           ${warnHtml}
         </div>
-        <button class="row-copy" onclick="copyRow('${copyText}', this)">複製</button>
+        <button class="row-copy" onclick="copyRow('${copyText}', this)">Copy</button>
       </div>`;
     tl.appendChild(row);
   });
@@ -454,11 +438,11 @@ function copyRow(text, btn) {
 function copyAll() {
   const rv = document.getElementById('release-date').value;
   if (!rv) return;
-  let out = `=== Release 時程 ===\nRelease Date: ${rv}\n\n`;
+  let out = `=== Release Schedule ===\nRelease Date: ${rv}\n\n`;
   PHASES.forEach(p => {
     if (p.type === 'single') {
       const d = addDays(rv, p.offset);
-      out += `${p.name}: ${fmt(d)}（週${DAYS[d.getDay()]}）\n`;
+      out += `${p.name}: ${fmt(d)} (${DAYS[d.getDay()]})\n`;
     } else {
       const ds = addDays(rv, p.offsetStart);
       const de = addDays(rv, p.offsetEnd);
@@ -467,8 +451,8 @@ function copyAll() {
   });
   navigator.clipboard.writeText(out).then(() => {
     const btn = document.querySelector('.copy-all-btn');
-    btn.textContent = '✓ 已複製！';
-    setTimeout(() => btn.textContent = '複製全部日期', 2000);
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy All Dates', 2000);
   });
 }
 
