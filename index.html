@@ -196,22 +196,16 @@ const TW_HOLIDAYS_2026 = {
 };
 
 const PHASES = [
-  { name: "Scope Lock Down 1", desc: "First scope confirmation",      offset: -46, type: "single", color: "purple", badge: "SCOPE" },
-  { name: "Est Day",           desc: "Effort estimation",             offset: -45, type: "single", color: "purple", badge: "PLAN"  },
-  { name: "Scope Lock Down 2", desc: "Second scope confirmation",     offset: -33, type: "single", color: "amber",  badge: "SCOPE" },
-  { name: "Dev",               desc: "Development period",            type: "range", offsetStart: -42, offsetEnd: -26, color: "teal",  badge: "DEV" },
-  { name: "QA",                desc: "Testing period",                type: "range", offsetStart: -25, offsetEnd: -5,  color: "blue",  badge: "QA"  },
-  { name: "QA Report & Note",  desc: "QA report & release notes due", offset: -4,  type: "single", color: "green", badge: "DOCS" },
+  { name: "Scope Lock Down 1", desc: "First scope confirmation",      offset: -32, type: "single", color: "purple", badge: "SCOPE" },
+  { name: "Est Day",           desc: "Effort estimation",             offset: -31, type: "single", color: "purple", badge: "PLAN"  },
+  { name: "Scope Lock Down 2", desc: "Second scope confirmation",     offset: -23, type: "single", color: "amber",  badge: "SCOPE" },
+  { name: "Dev",               desc: "Development period",            type: "range", offsetStart: -30, offsetEnd: -18, color: "teal",  badge: "DEV" },
+  { name: "QA",                desc: "Testing period",                type: "range", offsetStart: -17, offsetEnd: -3,  color: "blue",  badge: "QA"  },
+  { name: "QA Report & Note",  desc: "QA report & release notes due", offset: -2,  type: "single", color: "green", badge: "DOCS" },
   { name: "Release",           desc: "Production deployment",         offset: 0,   type: "single", color: "coral", badge: "🚀 RELEASE" },
 ];
 
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
-function addDays(base, n) {
-  const d = new Date(base);
-  d.setDate(d.getDate() + n);
-  return d;
-}
 
 function toKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -227,13 +221,32 @@ function isWeekend(d) { return d.getDay() === 0 || d.getDay() === 6; }
 
 function getHoliday(d) { return TW_HOLIDAYS_2026[toKey(d)] || null; }
 
-// Check if any date in a range hits a holiday
-function rangeHolidays(base, startOffset, endOffset) {
+function isNonWorkingDay(d) { return isWeekend(d); }
+
+// Add N calendar days skipping weekends only (negative = go back)
+// offset=0 returns base date as-is
+function addSkippingWeekends(base, n) {
+  const d = new Date(base);
+  if (n === 0) return d;
+  const step = n > 0 ? 1 : -1;
+  let remaining = Math.abs(n);
+  while (remaining > 0) {
+    d.setDate(d.getDate() + step);
+    if (!isWeekend(d)) remaining--;
+  }
+  return d;
+}
+
+// Find holidays within a calendar range
+function rangeHolidays(startDate, endDate) {
   const hits = [];
-  for (let i = startOffset; i <= endOffset; i++) {
-    const d = addDays(base, i);
-    const h = getHoliday(d);
-    if (h) hits.push({ date: fmtShort(d), name: h });
+  const d = new Date(startDate);
+  while (d <= endDate) {
+    if (!isWeekend(d)) {
+      const hol = getHoliday(d);
+      if (hol) hits.push({ date: fmtShort(new Date(d)), name: hol });
+    }
+    d.setDate(d.getDate() + 1);
   }
   return hits;
 }
@@ -252,7 +265,7 @@ function render() {
     let hasHoliday = false;
 
     if (p.type === 'single') {
-      const d = addDays(rv, p.offset);
+      const d = addSkippingWeekends(rv, p.offset);
       dateLabel = fmtShort(d);
       dayLabel = DAYS[d.getDay()];
       copyText = `${p.name}: ${fmt(d)}`;
@@ -261,23 +274,19 @@ function render() {
         warnHtml = `<div class="holiday-warn">🇹🇼 ${hol}</div>`;
         hasHoliday = true;
         allHolidayHits.push({ phase: p.name, date: fmtShort(d), name: hol });
-      } else if (isWeekend(d)) {
-        warnHtml = `<div class="weekend-warn">⚠ Falls on a weekend</div>`;
       }
     } else {
-      const ds = addDays(rv, p.offsetStart);
-      const de = addDays(rv, p.offsetEnd);
+      const ds = addSkippingWeekends(rv, p.offsetStart);
+      const de = addSkippingWeekends(rv, p.offsetEnd);
       dateLabel = `${fmtShort(ds)} – ${fmtShort(de)}`;
-      dayLabel = `${p.offsetEnd - p.offsetStart + 1} days`;
+      const calDays = Math.round((de - ds) / (1000*60*60*24)) + 1;
+      dayLabel = `${calDays} cal days`;
       copyText = `${p.name}: ${fmt(ds)} – ${fmt(de)}`;
-      const hits = rangeHolidays(rv, p.offsetStart, p.offsetEnd);
+      const hits = rangeHolidays(ds, de);
       if (hits.length > 0) {
         hasHoliday = true;
-        const names = hits.map(h => h.date + ' ' + h.name).join(', ');
         warnHtml = `<div class="holiday-warn">🇹🇼 ${hits.length} holiday${hits.length>1?'s':''} in range</div>`;
         hits.forEach(h => allHolidayHits.push({ phase: p.name, date: h.date, name: h.name }));
-      } else if (isWeekend(ds) || isWeekend(de)) {
-        // range spans weekends naturally, no warning needed
       }
     }
 
@@ -332,11 +341,11 @@ function copyAll() {
   let out = `=== Release Schedule ===\nRelease Date: ${rv}\n\n`;
   PHASES.forEach(p => {
     if (p.type === 'single') {
-      const d = addDays(rv, p.offset);
+      const d = addSkippingWeekends(rv, p.offset);
       out += `${p.name}: ${fmt(d)} (${DAYS[d.getDay()]})\n`;
     } else {
-      const ds = addDays(rv, p.offsetStart);
-      const de = addDays(rv, p.offsetEnd);
+      const ds = addSkippingWeekends(rv, p.offsetStart);
+      const de = addSkippingWeekends(rv, p.offsetEnd);
       out += `${p.name}: ${fmt(ds)} – ${fmt(de)}\n`;
     }
   });
