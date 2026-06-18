@@ -309,7 +309,7 @@ function render() {
           <div class="phase-day">${dayLabel}</div>
           ${warnHtml}
         </div>
-        <button class="row-copy" onclick="copyRow('${copyText}', this)">Copy</button>
+        <button class="row-copy" onclick="copyRow(this, '${p.name.replace(/'/g, "\\'")}')">Copy</button>
       </div>`;
     tl.appendChild(row);
   });
@@ -327,12 +327,43 @@ function render() {
   }
 }
 
-function copyRow(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = '✓';
-    setTimeout(() => btn.textContent = orig, 1500);
-  });
+function copyToClipboard(text, btn, successLabel) {
+  const restore = () => { if (btn) setTimeout(() => btn.textContent = successLabel === '✓ Copied!' ? 'Copy All Dates' : 'Copy', 2000); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (btn) { btn.textContent = successLabel; restore(); }
+    }).catch(() => fallbackCopy(text, btn, successLabel, restore));
+  } else {
+    fallbackCopy(text, btn, successLabel, restore);
+  }
+}
+
+function fallbackCopy(text, btn, successLabel, restore) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); if (btn) { btn.textContent = successLabel; restore(); } }
+  catch(e) { alert('Copy failed — please copy manually:\n\n' + text); }
+  document.body.removeChild(ta);
+}
+
+function copyRow(btn, phaseName) {
+  const rv = document.getElementById('release-date').value;
+  if (!rv) return;
+  const p = PHASES.find(x => x.name === phaseName);
+  if (!p) return;
+  let text = '';
+  if (p.type === 'single') {
+    const d = addSkippingWeekends(rv, p.offset);
+    text = `${p.name}: ${fmt(d)} (${DAYS[d.getDay()]})`;
+  } else {
+    const ds = addSkippingWeekends(rv, p.offsetStart);
+    const de = addSkippingWeekends(rv, p.offsetEnd);
+    text = `${p.name}: ${fmt(ds)} – ${fmt(de)}`;
+  }
+  copyToClipboard(text, btn, '✓');
 }
 
 function copyAll() {
@@ -349,11 +380,8 @@ function copyAll() {
       out += `${p.name}: ${fmt(ds)} – ${fmt(de)}\n`;
     }
   });
-  navigator.clipboard.writeText(out).then(() => {
-    const btn = document.querySelector('.copy-all-btn');
-    btn.textContent = '✓ Copied!';
-    setTimeout(() => btn.textContent = 'Copy All Dates', 2000);
-  });
+  const btn = document.querySelector('.copy-all-btn');
+  copyToClipboard(out, btn, '✓ Copied!');
 }
 
 document.getElementById('release-date').addEventListener('change', render);
